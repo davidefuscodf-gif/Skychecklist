@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skychecklist</title>
+    <style>
+        :root {
+            --bg: #0b132b;
+            --card-bg: rgba(27, 38, 59, 0.85);
+            --portal-blue: #38bdf8;
+            --gold: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            
+            --fuoco: #ef4444;
+            --acqua: #0284c7;
+            --vita: #22c55e;
+            --aria: #06b6d4;
+            --terra: #b45309;
+            --magia: #a855f7;
+            --nonmorte: #64748b;
+            --tecnologia: #eab308;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.3) 0%, transparent 65%),
+                url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2338bdf8' fill-opacity='0.08'%3E%3Cpath d='M20 10l5 10h-10zM60 20a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM15 55h10v10H15zM60 60l-7-7 7-7 7 7z'/%3E%3C/g%3E%3C/svg%3E");
+            color: var(--text); 
+            margin: 0; 
+            padding: 12px; 
+            min-height: 100vh;
+        }
+
+        /* Top Bar Controlli Superiori */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .lang-select, .btn-trophies {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--portal-blue);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* Titolo Logo Skylanders */
+        .app-title { 
+            font-family: 'Arial Black', 'Impact', sans-serif; 
+            font-size: 2.3rem; 
+            font-weight: 900;
+            text-align: center; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 35%, #38bdf8 70%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 3px 0px #0c4a6e) 
+                    drop-shadow(0px -1px 0px #0284c7) 
+                    drop-shadow(0 0 12px rgba(56, 189, 248, 0.6));
+            margin: 4px 0 16px 0;
+            transform: perspective(300px) rotateX(8deg);
+        }
+        
+        .dashboard { 
+            background: var(--card-bg); 
+            padding: 14px; 
+            border-radius: 16px; 
+            margin-bottom: 12px; 
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+        }
+
+        .progress-bar-bg { 
+            background: rgba(15, 23, 42, 0.8); 
+            border-radius: 10px; 
+            height: 16px; 
+            overflow: hidden; 
+            margin-top: 8px; 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .progress-bar-fill { 
+            background: linear-gradient(90deg, #38bdf8, var(--gold), #10b981); 
+            height: 100%; 
+            width: 0%; 
+            transition: width 0.3s; 
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        
+        /* Pannelli Riquadri Statistiche */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-top: 14px; }
+        .stat-card { 
+            background: rgba(15, 23, 42, 0.7); 
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 10px 6px; 
+            border-radius: 12px; 
+            text-align: center; 
+            cursor: pointer; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .stat-card:active { transform: scale(0.96); border-color: var(--portal-blue); }
+        
+        .stat-header { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+        .stat-icon-badge {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #0284c7);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; box-shadow: 0 0 6px rgba(56, 189, 248, 0.5); flex-shrink: 0;
+        }
+
+        .stat-card h4 { margin: 0; font-size: 0.7rem; color: #cbd5e1; text-transform: uppercase; font-weight: bold; }
+        .stat-card p { margin: 2px 0 0 0; font-weight: 800; font-size: 0.9rem; color: var(--gold); }
+
+        /* Filtri & Ricerca */
+        .controls { 
+            background: var(--card-bg); padding: 12px; border-radius: 14px; margin-bottom: 12px; 
+            display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(56, 189, 248, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        .search-box input { 
+            width: 100%; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); 
+            color: #fff; padding: 10px; border-radius: 8px; outline: none; font-size: 0.85rem;
+        }
+        .search-box input:focus { border-color: var(--portal-blue); }
+        
+        .filters-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filters-row select, .filters-row button { 
+            flex: 1; min-width: 80px; background: rgba(15, 23, 42, 0.8); 
+            border: 1px solid rgba(56, 189, 248, 0.3); color: #fff; padding: 8px; 
+            border-radius: 8px; font-size: 0.75rem; 
+        }
+        .btn-owned.active { background: var(--green); border-color: var(--green); }
+
+        /* Griglia Card Skylanders */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        .card { 
+            position: relative; background: var(--card-bg); border: 2px solid rgba(56, 189, 248, 0.15); 
+            border-radius: 12px; padding: 10px 4px 8px 4px; text-align: center; opacity: 0.55; 
+            filter: grayscale(70%); display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            min-height: 145px; backdrop-filter: blur(6px); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .card.owned { 
+            opacity: 1; filter: grayscale(0%); border-color: var(--green); 
+            background: rgba(16, 185, 129, 0.12); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+        }
+        
+        .card-menu-wrap { position: absolute; top: 3px; right: 3px; z-index: 10; }
+        .menu-btn { 
+            background: rgba(0,0,0,0.5); border: none; color: var(--text); font-size: 1.1rem; 
+            padding: 2px 6px; cursor: pointer; border-radius: 6px; line-height: 1;
+        }
+        .menu-dropdown { 
+            display: none; position: absolute; right: 0; top: 24px; background: #0f172a; 
+            border: 1px solid var(--portal-blue); border-radius: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.8); 
+            z-index: 30; min-width: 110px; overflow: hidden;
+        }
+        .menu-dropdown button { 
+            width: 100%; background: transparent; border: none; color: var(--text); 
+            padding: 8px 10px; text-align: left; font-size: 0.75rem; cursor: pointer; 
+        }
+        .menu-dropdown button:active { background: rgba(56, 189, 248, 0.2); }
+
+        .sky-img { width: 65px; height: 65px; object-fit: contain; margin: 4px 0; }
+        .element-badge {
+            width: 45px; height: 45px; border-radius: 50%; display: none; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: bold; margin: 10px 0; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .element-Fuoco { background: var(--fuoco); }
+        .element-Acqua { background: var(--acqua); }
+        .element-Vita { background: var(--vita); }
+        .element-Aria { background: var(--aria); }
+        .element-Terra { background: var(--terra); }
+        .element-Magia { background: var(--magia); }
+        .element-Non-Morte { background: var(--nonmorte); }
+        .element-Tecnologia { background: var(--tecnologia); }
+
+        .card strong { font-size: 0.75rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; color: #fff; }
+        .card small { font-size: 0.65rem; color: var(--muted); }
+        .tag { font-size: 0.55rem; padding: 2px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: var(--portal-blue); margin-top: 4px; font-weight: bold; border: 1px solid rgba(56, 189, 248, 0.3); }
+        
+        /* Modali Generali */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100; justify-content:center; align-items:center; backdrop-filter: blur(4px); }
+        .modal-content { background: #1e293b; padding: 18px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 80vh; overflow-y: auto; border: 1px solid var(--portal-blue); box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
+
+        /* Stili Griglia Trofei */
+        .trophy-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .trophy-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            opacity: 0.6;
+            filter: grayscale(80%);
+            transition: all 0.2s;
+        }
+        .trophy-card.unlocked {
+            opacity: 1;
+            filter: grayscale(0%);
+            border-color: var(--gold);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.8));
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
+        }
+        .trophy-info-left { display: flex; align-items: center; gap: 10px; }
+        .trophy-icon { font-size: 1.5rem; }
+        .trophy-details h5 { margin: 0; font-size: 0.85rem; color: #fff; }
+        .trophy-details p { margin: 2px 0 0 0; font-size: 0.65rem; color: var(--gold); font-weight: bold; }
+        .info-btn {
+            background: rgba(56, 189, 248, 0.2);
+            border: 1px solid var(--portal-blue);
+            color: var(--portal-blue);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            font-style: italic;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .info-btn:hover { background: var(--portal-blue); color: #000; }
+    </style>
+</head>
+<body onclick="closeAllMenus()">
+
+    <!-- Control Bar Superiore -->
+    <div class="top-bar">
+        <button class="btn-trophies" onclick="openTrophiesModal()">🏆 <span id="txt-trophies-btn">Trofei</span></button>
+        <select class="lang-select" id="lang-selector" onchange="changeLanguage(this.value)">
+            <option value="it">🇮🇹 IT</option>
+            <option value="en">🇬🇧 EN</option>
+        </select>
+    </div>
+
+    <div class="app-title">Skychecklist</div>
+
+    <!-- Dashboard Statistiche -->
+    <div class="dashboard">
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:0.85rem;">
+            <span id="txt-col-complete">Collezione Completata</span>
+            <span id="total-count" style="color: var(--portal-blue);">0 / 80 (0%)</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="total-progress"></div></div>
+        
+        <div class="stats-grid">
+            <div class="stat-card" onclick="openSummary('SSA_S1')">
+                <div class="stat-header"><div class="stat-icon-badge">📜</div><h4>SSA (S1)</h4></div>
+                <p id="c-ssa">0/32</p>
+            </div>
+            <div class="stat-card" onclick="openSummary('GIANTS_NEW')">
+                <div class="stat-header"><div class="stat-icon-badge">🌟</div><h4 id="lbl-core-1">Core</h4></div>
+                <p id="c-gnew">0/8</p>
+            </div>
+            <div class="stat-card" onclick="openSummary('GIANTS_TYPE')">
+                <div class="stat-header"><div class="stat-icon-badge">🛡️</div><h4 id="lbl-giants-8">8 Giganti</h4></div>
+                <p id="c-gtype">0/8</p>
+            </div>
+            <div class="stat-card" onclick="openSummary('SERIES_2')">
+                <div class="stat-header"><div class="stat-icon-badge">⚡</div><h4>Series 2</h4></div>
+                <p id="c-s2">0/24</p>
+            </div>
+            <div class="stat-card" onclick="openSummary('LIGHTCORE')">
+                <div class="stat-header"><div class="stat-icon-badge">💡</div><h4>LightCore</h4></div>
+                <p id="c-lc">0/8</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtri e Ricerca -->
+    <div class="controls">
+        <div class="search-box"><input type="text" id="search" placeholder="🔍 Cerca Skylander..." oninput="render()"></div>
+        <div class="filters-row">
+            <button id="btn-owned" class="btn-owned" onclick="toggleOwnedFilter()">Posseduti</button>
+            <select id="filter-game" onchange="render()"></select>
+            <select id="filter-variant" onchange="render()"></select>
+            <select id="filter-element" onchange="render()"></select>
+        </div>
+    </div>
+
+    <!-- Griglia Skylander -->
+    <div class="grid" id="container"></div>
+
+    <!-- Modal Dettaglio Categoria -->
+    <div class="modal" id="modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modal-title" style="margin-top:0; color:var(--portal-blue);"></h3>
+            <div id="modal-list" class="grid"></div>
+        </div>
+    </div>
+
+    <!-- Modal Elenco Trofei -->
+    <div class="modal" id="trophies-modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="txt-trophies-title" style="margin-top:0; color:var(--gold); text-align:center;">🏆 Trofei & Titoli</h3>
+            <div id="trophies-list" class="trophy-grid"></div>
+        </div>
+    </div>
+
+    <!-- Modal Info Dettaglio Trofeo -->
+    <div class="modal" id="info-modal" onclick="this.style.display='none'">
+        <div class="modal-content" style="max-width: 320px; text-align:center;" onclick="event.stopPropagation()">
+            <div style="font-size:2.5rem; margin-bottom:8px;" id="info-modal-icon">🏆</div>
+            <h4 id="info-modal-title" style="margin:0 0 10px 0; color:var(--portal-blue);"></h4>
+            <p id="info-modal-desc" style="font-size:0.85rem; color:#cbd5e1; line-height:1.4; margin-bottom:15px;"></p>
+            <button onclick="document.getElementById('info-modal').style.display='none'" style="background:var(--portal-blue); border:none; color:#000; font-weight:bold; padding:8px 16px; border-radius:8px; cursor:pointer;">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const i18n = {
+            it: {
+                trophiesBtn: "Trofei",
+                colComplete: "Collezione Completata",
+                core: "Core",
+                eightGiants: "8 Giganti",
+                searchPlaceholder: "🔍 Cerca Skylander...",
+                onlyMine: "Posseduti",
+                allGames: "Tutti i Giochi",
+                allVariants: "Tutti",
+                allElements: "Tutti gli Elementi",
+                trophiesTitle: "🏆 Trofei & Titoli",
+                remove: "❌ Rimuovi",
+                add: "✅ Aggiungi",
+                ownedLabel: "Posseduto ✅",
+                missingLabel: "Mancante 🔒",
+                unlocked: "SBLOCCATO!",
+                locked: "BLOCCATO",
+                elements: {
+                    "Fuoco": "Fuoco", "Acqua": "Acqua", "Vita": "Vita", "Aria": "Aria",
+                    "Terra": "Terra", "Magia": "Magia", "Non-Morte": "Non-Morte", "Tecnologia": "Tecnologia"
+                },
+                trophyData: [
+                    { id: "og_trio", title: "Trio OG", desc: "Sbloccato possedendo Trigger Happy, Spyro e Gill Grunt." },
+                    { id: "elementalist", title: "Elementalista", desc: "Sbloccato possedendo almeno uno Skylander per ciascuno degli 8 elementi." },
+                    { id: "veteran", title: "Veterano", desc: "Sbloccato possedendo tutti gli Skylanders di SSA." },
+                    { id: "giant", title: "Gigante", desc: "Sbloccato possedendo tutti e gli 8 Giganti." },
+                    { id: "vanguard", title: "Avanguardista", desc: "Sbloccato possedendo tutti gli Skylanders Core di Giants." },
+                    { id: "enhancer", title: "Enhancer", desc: "Sbloccato possedendo tutti i 24 Skylanders Series 2." },
+                    { id: "arkus_master", title: "Dominatore di Aurkus", desc: "Sbloccato possedendo tutti gli Skylanders del gioco Skylanders Giants." },
+                    { id: "portal_master", title: "Padrone dei portali", desc: "Sbloccato possedendo tutti gli Skylanders (100%)." }
+                ]
+            },
+            en: {
+                trophiesBtn: "Trophies",
+                colComplete: "Collection Completed",
+                core: "Core",
+                eightGiants: "8 Giants",
+                searchPlaceholder: "🔍 Search Skylander...",
+                onlyMine: "Only Mine",
+                allGames: "All Games",
+                allVariants: "All Variants",
+                allElements: "All Elements",
+                trophiesTitle: "🏆 Trophies & Titles",
+                remove: "❌ Remove",
+                add: "✅ Add",
+                ownedLabel: "Owned ✅",
+                missingLabel: "Missing 🔒",
+                unlocked: "UNLOCKED!",
+                locked: "LOCKED",
+                elements: {
+                    "Fuoco": "Fire", "Acqua": "Water", "Vita": "Life", "Aria": "Air",
+                    "Terra": "Earth", "Magia": "Magic", "Non-Morte": "Undead", "Tecnologia": "Tech"
+                },
+                trophyData: [
+                    { id: "og_trio", title: "OG Trio", desc: "Unlocked by owning Trigger Happy, Spyro, and Gill Grunt." },
+                    { id: "elementalist", title: "Elementalist", desc: "Unlocked by owning at least one Skylander of each of the 8 elements." },
+                    { id: "veteran", title: "Veteran", desc: "Unlocked by owning all SSA Skylanders." },
+                    { id: "giant", title: "Giant", desc: "Unlocked by owning all 8 Giants." },
+                    { id: "vanguard", title: "Vanguard", desc: "Unlocked by owning all Giants Core Skylanders." },
+                    { id: "enhancer", title: "Enhancer", desc: "Unlocked by owning all 24 Series 2 Skylanders." },
+                    { id: "arkus_master", title: "Master of Arkus", desc: "Unlocked by owning all Skylanders from Skylanders Giants." },
+                    { id: "portal_master", title: "Portal Master", desc: "Unlocked by completing the entire collection (100%)." }
+                ]
+            }
+        };
+
+        let currentLang = localStorage.getItem('sky_lang') || 'it';
+        const icons = { "Fuoco": "🔥", "Acqua": "💧", "Vita": "🍃", "Aria": "🌀", "Terra": "🪨", "Magia": "🔮", "Non-Morte": "💀", "Tecnologia": "⚙️" };
+
+        const skylanders = [
+            // SSA (Series 1)
+            { id: "spyro_s1", name: "Spyro", game: "SSA", element: "Magia", variant: "Series 1", img: "img/spyro_s1.png" },
+            { id: "voodood_s1", name: "Voodood", game: "SSA", element: "Magia", variant: "Series 1", img: "img/voodood_s1.png" },
+            { id: "double_trouble_s1", name: "Double Trouble", game: "SSA", element: "Magia", variant: "Series 1", img: "img/double_trouble_s1.png" },
+            { id: "wrecking_ball_s1", name: "Wrecking Ball", game: "SSA", element: "Magia", variant: "Series 1", img: "img/wrecking_ball_s1.png" },
+            { id: "gill_grunt_s1", name: "Gill Grunt", game: "SSA", element: "Acqua", variant: "Series 1", img: "img/gill_grunt_s1.png" },
+            { id: "slam_bam_s1", name: "Slam Bam", game: "SSA", element: "Acqua", variant: "Series 1", img: "img/slam_bam_s1.png" },
+            { id: "zap_s1", name: "Zap", game: "SSA", element: "Acqua", variant: "Series 1", img: "img/zap_s1.png" },
+            { id: "wham_shell_s1", name: "Wham-Shell", game: "SSA", element: "Acqua", variant: "Series 1", img: "img/wham_shell_s1.png" },
+            { id: "ignitor_s1", name: "Ignitor", game: "SSA", element: "Fuoco", variant: "Series 1", img: "img/ignitor_s1.png" },
+            { id: "flameslinger_s1", name: "Flameslinger", game: "SSA", element: "Fuoco", variant: "Series 1", img: "img/flameslinger_s1.png" },
+            { id: "eruptor_s1", name: "Eruptor", game: "SSA", element: "Fuoco", variant: "Series 1", img: "img/eruptor_s1.png" },
+            { id: "sunburn_s1", name: "Sunburn", game: "SSA", element: "Fuoco", variant: "Series 1", img: "img/sunburn_s1.png" },
+            { id: "stealth_elf_s1", name: "Stealth Elf", game: "SSA", element: "Vita", variant: "Series 1", img: "img/stealth_elf_s1.png" },
+            { id: "stump_smash_s1", name: "Stump Smash", game: "SSA", element: "Vita", variant: "Series 1", img: "img/stump_smash_s1.png" },
+            { id: "zook_s1", name: "Zook", game: "SSA", element: "Vita", variant: "Series 1", img: "img/zook_s1.png" },
+            { id: "camo_s1", name: "Camo", game: "SSA", element: "Vita", variant: "Series 1", img: "img/camo_s1.png" },
+            { id: "terrafin_s1", name: "Terrafin", game: "SSA", element: "Terra", variant: "Series 1", img: "img/terrafin_s1.png" },
+            { id: "dino_rang_s1", name: "Dino-Rang", game: "SSA", element: "Terra", variant: "Series 1", img: "img/dino_rang_s1.png" },
+            { id: "prism_break_s1", name: "Prism Break", game: "SSA", element: "Terra", variant: "Series 1", img: "img/prism_break_s1.png" },
+            { id: "bash_s1", name: "Bash", game: "SSA", element: "Terra", variant: "Series 1", img: "img/bash_s1.png" },
+            { id: "chop_chop_s1", name: "Chop Chop", game: "SSA", element: "Non-Morte", variant: "Series 1", img: "img/chop_chop_s1.png" },
+            { id: "cynder_s1", name: "Cynder", game: "SSA", element: "Non-Morte", variant: "Series 1", img: "img/cynder_s1.png" },
+            { id: "ghost_roaster_s1", name: "Ghost Roaster", game: "SSA", element: "Non-Morte", variant: "Series 1", img: "img/ghost_roaster_s1.png" },
+            { id: "hex_s1", name: "Hex", game: "SSA", element: "Non-Morte", variant: "Series 1", img: "img/hex_s1.png" },
+            { id: "trigger_happy_s1", name: "Trigger Happy", game: "SSA", element: "Tecnologia", variant: "Series 1", img: "img/trigger_happy_s1.png" },
+            { id: "boomer_s1", name: "Boomer", game: "SSA", element: "Tecnologia", variant: "Series 1", img: "img/boomer_s1.png" },
+            { id: "drobot_s1", name: "Drobot", game: "SSA", element: "Tecnologia", variant: "Series 1", img: "img/drobot_s1.png" },
+            { id: "drill_sergeant_s1", name: "Drill Sergeant", game: "SSA", element: "Tecnologia", variant: "Series 1", img: "img/drill_sergeant_s1.png" },
+            { id: "whirlwind_s1", name: "Whirlwind", game: "SSA", element: "Aria", variant: "Series 1", img: "img/whirlwind_s1.png" },
+            { id: "sonic_boom_s1", name: "Sonic Boom", game: "SSA", element: "Aria", variant: "Series 1", img: "img/sonic_boom_s1.png" },
+            { id: "warnado_s1", name: "Warnado", game: "SSA", element: "Aria", variant: "Series 1", img: "img/warnado_s1.png" },
+            { id: "lightning_rod_s1", name: "Lightning Rod", game: "SSA", element: "Aria", variant: "Series 1", img: "img/lightning_rod_s1.png" },
+
+            // GIANTS (8 Giganti)
+            { id: "tree_rex", name: "Tree Rex", game: "Giants", element: "Vita", variant: "Giant", img: "img/tree_rex.png" },
+            { id: "bouncer", name: "Bouncer", game: "Giants", element: "Tecnologia", variant: "Giant", img: "img/bouncer.png" },
+            { id: "crusher", name: "Crusher", game: "Giants", element: "Terra", variant: "Giant", img: "img/crusher.png" },
+            { id: "eyebrawl", name: "Eye-Brawl", game: "Giants", element: "Non-Morte", variant: "Giant", img: "img/eyebrawl.png" },
+            { id: "hot_head", name: "Hot Head", game: "Giants", element: "Fuoco", variant: "Giant", img: "img/hot_head.png" },
+            { id: "ninjini", name: "Ninjini", game: "Giants", element: "Magia", variant: "Giant", img: "img/ninjini.png" },
+            { id: "swarm", name: "Swarm", game: "Giants", element: "Aria", variant: "Giant", img: "img/swarm.png" },
+            { id: "thumpback", name: "Thumpback", game: "Giants", element: "Acqua", variant: "Giant", img: "img/thumpback.png" },
+
+            // GIANTS (Core)
+            { id: "jet_vac_s1", name: "Jet-Vac", game: "Giants", element: "Aria", variant: "Series 1", img: "img/jet_vac_s1.png" },
+            { id: "pop_fizz_s1", name: "Pop Fizz", game: "Giants", element: "Magia", variant: "Series 1", img: "img/pop_fizz_s1.png" },
+            { id: "chill_s1", name: "Chill", game: "Giants", element: "Acqua", variant: "Series 1", img: "img/chill_s1.png" },
+            { id: "hot_dog_s1", name: "Hot Dog", game: "Giants", element: "Fuoco", variant: "Series 1", img: "img/hot_dog_s1.png" },
+            { id: "sprocket_s1", name: "Sprocket", game: "Giants", element: "Tecnologia", variant: "Series 1", img: "img/sprocket_s1.png" },
+            { id: "flashwing_s1", name: "Flashwing", game: "Giants", element: "Terra", variant: "Series 1", img: "img/flashwing_s1.png" },
+            { id: "fright_rider_s1", name: "Fright Rider", game: "Giants", element: "Non-Morte", variant: "Series 1", img: "img/fright_rider_s1.png" },
+            { id: "shroomboom_s1", name: "Shroomboom", game: "Giants", element: "Vita", variant: "Series 1", img: "img/shroomboom_s1.png" },
+
+            // GIANTS (Series 2)
+            { id: "spyro_s2", name: "Spyro (S2)", game: "Giants", element: "Magia", variant: "Series 2", img: "img/spyro_s2.png" },
+            { id: "double_trouble_s2", name: "Double Trouble (S2)", game: "Giants", element: "Magia", variant: "Series 2", img: "img/double_trouble_s2.png" },
+            { id: "wrecking_ball_s2", name: "Wrecking Ball (S2)", game: "Giants", element: "Magia", variant: "Series 2", img: "img/wrecking_ball_s2.png" },
+            { id: "gill_grunt_s2", name: "Gill Grunt (S2)", game: "Giants", element: "Acqua", variant: "Series 2", img: "img/gill_grunt_s2.png" },
+            { id: "slam_bam_s2", name: "Slam Bam (S2)", game: "Giants", element: "Acqua", variant: "Series 2", img: "img/slam_bam_s2.png" },
+            { id: "zap_s2", name: "Zap (S2)", game: "Giants", element: "Acqua", variant: "Series 2", img: "img/zap_s2.png" },
+            { id: "ignitor_s2", name: "Ignitor (S2)", game: "Giants", element: "Fuoco", variant: "Series 2", img: "img/ignitor_s2.png" },
+            { id: "flameslinger_s2", name: "Flameslinger (S2)", game: "Giants", element: "Fuoco", variant: "Series 2", img: "img/flameslinger_s2.png" },
+            { id: "eruptor_s2", name: "Eruptor (S2)", game: "Giants", element: "Fuoco", variant: "Series 2", img: "img/eruptor_s2.png" },
+            { id: "stealth_elf_s2", name: "Stealth Elf (S2)", game: "Giants", element: "Vita", variant: "Series 2", img: "img/stealth_elf_s2.png" },
+            { id: "stump_smash_s2", name: "Stump Smash (S2)", game: "Giants", element: "Vita", variant: "Series 2", img: "img/stump_smash_s2.png" },
+            { id: "zook_s2", name: "Zook (S2)", game: "Giants", element: "Vita", variant: "Series 2", img: "img/zook_s2.png" },
+            { id: "terrafin_s2", name: "Terrafin (S2)", game: "Giants", element: "Terra", variant: "Series 2", img: "img/terrafin_s2.png" },
+            { id: "prism_break_s2", name: "Prism Break (S2)", game: "Giants", element: "Terra", variant: "Series 2", img: "img/prism_break_s2.png" },
+            { id: "bash_s2", name: "Bash (S2)", game: "Giants", element: "Terra", variant: "Series 2", img: "img/bash_s2.png" },
+            { id: "chop_chop_s2", name: "Chop Chop (S2)", game: "Giants", element: "Non-Morte", variant: "Series 2", img: "img/chop_chop_s2.png" },
+            { id: "cynder_s2", name: "Cynder (S2)", game: "Giants", element: "Non-Morte", variant: "Series 2", img: "img/cynder_s2.png" },
+            { id: "hex_s2", name: "Hex (S2)", game: "Giants", element: "Non-Morte", variant: "Series 2", img: "img/hex_s2.png" },
+            { id: "trigger_happy_s2", name: "Trigger Happy (S2)", game: "Giants", element: "Tecnologia", variant: "Series 2", img: "img/trigger_happy_s2.png" },
+            { id: "drobot_s2", name: "Drobot (S2)", game: "Giants", element: "Tecnologia", variant: "Series 2", img: "img/drobot_s2.png" },
+            { id: "drill_sergeant_s2", name: "Drill Sergeant (S2)", game: "Giants", element: "Tecnologia", variant: "Series 2", img: "img/drill_sergeant_s2.png" },
+            { id: "whirlwind_s2", name: "Whirlwind (S2)", game: "Giants", element: "Aria", variant: "Series 2", img: "img/whirlwind_s2.png" },
+            { id: "sonic_boom_s2", name: "Sonic Boom (S2)", game: "Giants", element: "Aria", variant: "Series 2", img: "img/sonic_boom_s2.png" },
+            { id: "lightning_rod_s2", name: "Lightning Rod (S2)", game: "Giants", element: "Aria", variant: "Series 2", img: "img/lightning_rod_s2.png" },
+
+            // GIANTS (LightCore)
+            { id: "eruptor_lc", name: "Eruptor (LC)", game: "Giants", element: "Fuoco", variant: "LightCore", img: "img/eruptor_lc.png" },
+            { id: "prism_break_lc", name: "Prism Break (LC)", game: "Giants", element: "Terra", variant: "LightCore", img: "img/prism_break_lc.png" },
+            { id: "hex_lc", name: "Hex (LC)", game: "Giants", element: "Non-Morte", variant: "LightCore", img: "img/hex_lc.png" },
+            { id: "drobot_lc", name: "Drobot (LC)", game: "Giants", element: "Tecnologia", variant: "LightCore", img: "img/drobot_lc.png" },
+            { id: "jet_vac_lc", name: "Jet-Vac (LC)", game: "Giants", element: "Aria", variant: "LightCore", img: "img/jet_vac_lc.png" },
+            { id: "pop_fizz_lc", name: "Pop Fizz (LC)", game: "Giants", element: "Magia", variant: "LightCore", img: "img/pop_fizz_lc.png" },
+            { id: "chill_lc", name: "Chill (LC)", game: "Giants", element: "Acqua", variant: "LightCore", img: "img/chill_lc.png" },
+            { id: "shroomboom_lc", name: "Shroomboom (LC)", game: "Giants", element: "Vita", variant: "LightCore", img: "img/shroomboom_lc.png" }
+        ];
+
+        let owned = [];
+        try { owned = JSON.parse(localStorage.getItem('my_skylander_list') || '[]'); } catch(e) {}
+        let showOnlyOwned = false;
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('sky_lang', lang);
+            document.getElementById('lang-selector').value = lang;
+            applyStaticTranslations();
+            render();
+        }
+
+        function applyStaticTranslations() {
+            const t = i18n[currentLang];
+            document.getElementById('txt-trophies-btn').innerText = t.trophiesBtn;
+            document.getElementById('txt-col-complete').innerText = t.colComplete;
+            document.getElementById('lbl-core-1').innerText = t.core;
+            document.getElementById('lbl-giants-8').innerText = t.eightGiants;
+            document.getElementById('search').placeholder = t.searchPlaceholder;
+            document.getElementById('btn-owned').innerText = t.onlyMine;
+            document.getElementById('txt-trophies-title').innerText = t.trophiesTitle;
+
+            // Aggiorna Opzioni Filtri Dropdown
+            const fGame = document.getElementById('filter-game');
+            const selGame = fGame.value || 'all';
+            fGame.innerHTML = `<option value="all">${t.allGames}</option><option value="SSA">SSA</option><option value="Giants">Giants</option>`;
+            fGame.value = selGame;
+
+            const fVar = document.getElementById('filter-variant');
+            const selVar = fVar.value || 'all';
+            fVar.innerHTML = `<option value="all">${t.allVariants}</option><option value="Series 1">Series 1</option><option value="Series 2">Series 2</option><option value="Giant">Giant</option><option value="LightCore">LightCore</option>`;
+            fVar.value = selVar;
+
+            const fElem = document.getElementById('filter-element');
+            const selElem = fElem.value || 'all';
+            fElem.innerHTML = `<option value="all">${t.allElements}</option>` + 
+                Object.keys(t.elements).map(el => `<option value="${el}">${t.elements[el]}</option>`).join('');
+            fElem.value = selElem;
+        }
+
+        function setOwnedState(id, addState, event) {
+            if(event) event.stopPropagation();
+            if(addState && !owned.includes(id)) {
+                owned.push(id);
+            } else if(!addState && owned.includes(id)) {
+                owned = owned.filter(x => x !== id);
+            }
+            try { localStorage.setItem('my_skylander_list', JSON.stringify(owned)); } catch(e) {}
+            closeAllMenus();
+            render();
+        }
+
+        function toggleMenu(event, id) {
+            if(event) event.stopPropagation();
+            const targetMenu = document.getElementById(`menu-${id}`);
+            const isCurrentlyOpen = targetMenu.style.display === 'block';
+            closeAllMenus();
+            if(!isCurrentlyOpen) targetMenu.style.display = 'block';
+        }
+
+        function closeAllMenus() {
+            document.querySelectorAll('.menu-dropdown').forEach(m => m.style.display = 'none');
+        }
+
+        function handleImgError(imgEl) {
+            imgEl.style.display = 'none';
+            const badge = imgEl.nextElementSibling;
+            if(badge) badge.style.display = 'flex';
+        }
+
+        function toggleOwnedFilter() {
+            showOnlyOwned = !showOnlyOwned;
+            document.getElementById('btn-owned').classList.toggle('active', showOnlyOwned);
+            render();
+        }
+
+        function render() {
+            const t = i18n[currentLang];
+            const search = document.getElementById('search').value.toLowerCase();
+            const game = document.getElementById('filter-game').value;
+            const variant = document.getElementById('filter-variant').value;
+            const element = document.getElementById('filter-element').value;
+            
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+
+            skylanders.forEach(sky => {
+                const isOwned = owned.includes(sky.id);
+                if(showOnlyOwned && !isOwned) return;
+                if(search && !sky.name.toLowerCase().includes(search)) return;
+                if(game !== 'all' && sky.game !== game) return;
+                if(variant !== 'all' && sky.variant !== variant) return;
+                if(element !== 'all' && sky.element !== element) return;
+
+                const card = document.createElement('div');
+                card.className = `card ${isOwned ? 'owned' : ''}`;
+                card.innerHTML = `
+                    <div class="card-menu-wrap">
+                        <button class="menu-btn" onclick="toggleMenu(event, '${sky.id}')">⋮</button>
+                        <div class="menu-dropdown" id="menu-${sky.id}">
+                            ${isOwned 
+                                ? `<button onclick="setOwnedState('${sky.id}', false, event)">${t.remove}</button>` 
+                                : `<button onclick="setOwnedState('${sky.id}', true, event)">${t.add}</button>`
+                            }
+                        </div>
+                    </div>
+                    <img src="${sky.img}" class="sky-img" alt="${sky.name}" onerror="handleImgError(this)">
+                    <div class="element-badge element-${sky.element}">${icons[sky.element]}</div>
+                    <strong>${sky.name}</strong>
+                    <small>${t.elements[sky.element]}</small>
+                    <span class="tag">${sky.variant}</span>
+                `;
+                container.appendChild(card);
+            });
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const total = skylanders.length;
+            const count = owned.length;
+            const pct = Math.round((count / total) * 100);
+            document.getElementById('total-count').innerText = `${count} / ${total} (${pct}%)`;
+            document.getElementById('total-progress').style.width = `${pct}%`;
+
+            const getCount = (filterFn) => skylanders.filter(s => owned.includes(s.id) && filterFn(s)).length;
+            
+            document.getElementById('c-ssa').innerText = `${getCount(s => s.game === 'SSA' && s.variant === 'Series 1')}/32`;
+            document.getElementById('c-gnew').innerText = `${getCount(s => s.game === 'Giants' && s.variant === 'Series 1')}/8`;
+            document.getElementById('c-gtype').innerText = `${getCount(s => s.variant === 'Giant')}/8`;
+            document.getElementById('c-s2').innerText = `${getCount(s => s.variant === 'Series 2')}/24`;
+            document.getElementById('c-lc').innerText = `${getCount(s => s.variant === 'LightCore')}/8`;
+        }
+
+        // Calcolo Logica Trofei Sbloccati
+        function checkTrophyStatus(trophyId) {
+            const allElements = ["Fuoco", "Acqua", "Vita", "Aria", "Terra", "Magia", "Non-Morte", "Tecnologia"];
+            if (trophyId === "og_trio") {
+                return (owned.includes("trigger_happy_s1") || owned.includes("trigger_happy_s2")) && 
+                       (owned.includes("spyro_s1") || owned.includes("spyro_s2")) && 
+                       (owned.includes("gill_grunt_s1") || owned.includes("gill_grunt_s2"));
+            }
+            if (trophyId === "elementalist") {
+                return allElements.every(el => skylanders.some(s => s.element === el && owned.includes(s.id)));
+            }
+            if (trophyId === "veteran") {
+                return skylanders.filter(s => s.game === 'SSA' && s.variant === 'Series 1').every(s => owned.includes(s.id));
+            }
+            if (trophyId === "giant") {
+                return skylanders.filter(s => s.variant === 'Giant').every(s => owned.includes(s.id));
+            }
+            if (trophyId === "vanguard") {
+                return skylanders.filter(s => s.game === 'Giants' && s.variant === 'Series 1').every(s => owned.includes(s.id));
+            }
+            if (trophyId === "enhancer") {
+                return skylanders.filter(s => s.variant === 'Series 2').every(s => owned.includes(s.id));
+            }
+            if (trophyId === "arkus_master") {
+                return skylanders.filter(s => s.game === 'Giants').every(s => owned.includes(s.id));
+            }
+            if (trophyId === "portal_master") {
+                return skylanders.length > 0 && skylanders.every(s => owned.includes(s.id));
+            }
+            return false;
+        }
+
+        function openTrophiesModal() {
+            const t = i18n[currentLang];
+            const list = document.getElementById('trophies-list');
+            list.innerHTML = '';
+
+            t.trophyData.forEach(trophy => {
+                const isUnlocked = checkTrophyStatus(trophy.id);
+                const item = document.createElement('div');
+                item.className = `trophy-card ${isUnlocked ? 'unlocked' : ''}`;
+                item.innerHTML = `
+                    <div class="trophy-info-left">
+                        <div class="trophy-icon">${isUnlocked ? '🏆' : '🔒'}</div>
+                        <div class="trophy-details">
+                            <h5>${trophy.title}</h5>
+                            <p>${isUnlocked ? t.unlocked : t.locked}</p>
+                        </div>
+                    </div>
+                    <button class="info-btn" onclick="openTrophyInfo('${trophy.title}', '${trophy.desc}', '${isUnlocked ? '🏆' : '🔒'}')">i</button>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('trophies-modal').style.display = 'flex';
+        }
+
+        function openTrophyInfo(title, desc, icon) {
+            document.getElementById('info-modal-title').innerText = title;
+            document.getElementById('info-modal-desc').innerText = desc;
+            document.getElementById('info-modal-icon').innerText = icon;
+            document.getElementById('info-modal').style.display = 'flex';
+        }
+
+        function openSummary(cat) {
+            const t = i18n[currentLang];
+            const modal = document.getElementById('modal');
+            const list = document.getElementById('modal-list');
+            list.innerHTML = '';
+            
+            let filtered = [];
+            let catName = "";
+            if(cat === 'SSA_S1') { filtered = skylanders.filter(s => s.game === 'SSA' && s.variant === 'Series 1'); catName = "SSA (S1)"; }
+            if(cat === 'GIANTS_NEW') { filtered = skylanders.filter(s => s.game === 'Giants' && s.variant === 'Series 1'); catName = t.core; }
+            if(cat === 'GIANTS_TYPE') { filtered = skylanders.filter(s => s.variant === 'Giant'); catName = t.eightGiants; }
+            if(cat === 'SERIES_2') { filtered = skylanders.filter(s => s.variant === 'Series 2'); catName = "Series 2"; }
+            if(cat === 'LIGHTCORE') { filtered = skylanders.filter(s => s.variant === 'LightCore'); catName = "LightCore"; }
+
+            document.getElementById('modal-title').innerText = `${catName} (${filtered.filter(s => owned.includes(s.id)).length}/${filtered.length})`;
+
+            filtered.forEach(sky => {
+                const isOwned = owned.includes(sky.id);
+                const item = document.createElement('div');
+                item.className = `card ${isOwned ? 'owned' : ''}`;
+                item.innerHTML = `
+                    <div class="card-menu-wrap">
+                        <button class="menu-btn" onclick="toggleMenu(event, 'modal-${sky.id}')">⋮</button>
+                        <div class="menu-dropdown" id="menu-modal-${sky.id}">
+                            ${isOwned 
+                                ? `<button onclick="setOwnedState('${sky.id}', false, event); openSummary('${cat}');">${t.remove}</button>` 
+                                : `<button onclick="setOwnedState('${sky.id}', true, event); openSummary('${cat}');">${t.add}</button>`
+                            }
+                        </div>
+                    </div>
+                    <img src="${sky.img}" class="sky-img" alt="${sky.name}" onerror="handleImgError(this)">
+                    <div class="element-badge element-${sky.element}">${icons[sky.element]}</div>
+                    <strong>${sky.name}</strong>
+                    <small>${isOwned ? t.ownedLabel : t.missingLabel}</small>
+                `;
+                list.appendChild(item);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        // Inizializzazione
+        applyStaticTranslations();
+        render();
+    </script>
+</body>
+</html>
